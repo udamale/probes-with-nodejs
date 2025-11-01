@@ -1,4 +1,4 @@
-apiVersion: v1
+dapiVersion: v1
 kind: Pod
 metadata:
   name: nginx-readiness-test
@@ -10,12 +10,31 @@ spec:
     image: 656701891231.dkr.ecr.ap-south-1.amazonaws.com/app
     ports:
     - containerPort: 3000
+    startupProbe:
+      httpGet:
+        path: /       # or a health/startup endpoint you expose
+        port: 3000
+      initialDelaySeconds: 10     # wait 10s before first check
+      periodSeconds: 5            # check every 5s
+      failureThreshold: 12        # allow up to 12 failures → ~1 minute warm‑up
+
     readinessProbe:
       httpGet:
-        path: /
+        path: /about         # or your readiness endpoint
         port: 3000
-      initialDelaySeconds: 5
-      periodSeconds: 5
+      initialDelaySeconds: 15     # wait 15s before first traffic check
+      periodSeconds: 5            # check every 5s
+      timeoutSeconds: 2           # allow 2s for response
+      failureThreshold: 2         # 2 failures → mark NOT ready
+
+    livenessProbe:
+      httpGet:
+        path: /contact        # expose a simple health endpoint
+        port: 3000
+      initialDelaySeconds: 20     # wait 20s after startup before checking
+      periodSeconds: 10           # check every 10s
+      timeoutSeconds: 3           # allow 3s for response
+      failureThreshold: 3         # 3 failures → restart container
 ---
 apiVersion: v1
 kind: Service
